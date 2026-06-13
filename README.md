@@ -103,47 +103,36 @@ gcc -O2 -o custom_utils/pwd_util/mypwd custom_utils/pwd_util/mypwd.c
 
 ## Example Outputs
 
-### 1. Echo Utility
+### 1. myecho - Custom Echo Utility
 
-The standard Linux `echo` command prints text to the terminal:
+The custom `myecho` utility prints text to the terminal:
 
 ```bash
-$ echo "Hello, System Programming!"
+$ ./myecho "Hello, System Programming!"
 Hello, System Programming!
 
-$ echo "Welcome to Linux"
+$ ./myecho "Welcome to Linux"
 Welcome to Linux
-
-$ echo -e "Line 1\nLine 2\nLine 3"
-Line 1
-Line 2
-Line 3
 ```
 
-### 2. Pwd Utility (Custom Implementation)
+### 2. mypwd - Custom Print Working Directory Utility
 
-Our custom `mypwd` utility and the standard `pwd` command:
+Our custom `mypwd` utility displays the current working directory:
 
 ```bash
-$ pwd
-/home/user/System_Programming_Using_Linux
-
 $ ./custom_utils/pwd_util/mypwd
 /home/user/System_Programming_Using_Linux
 
-$ cd custom_utils/pwd_util && pwd
-/home/user/System_Programming_Using_Linux/custom_utils/pwd_util
-
-$ cd custom_utils/pwd_util && ../../mypwd
+$ cd custom_utils/pwd_util && ./mypwd
 /home/user/System_Programming_Using_Linux/custom_utils/pwd_util
 ```
 
-### 3. Cat Utility
+### 3. mycat - Custom Cat Utility
 
-The `cat` command displays file contents:
+The `mycat` utility displays file contents:
 
 ```bash
-$ cat mypwd.c
+$ ./mycat mypwd.c
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -162,50 +151,40 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-$ cat README.md | head -5
+$ ./mycat README.md
 # System Programming Using Linux
 
 A collection of custom Linux utility implementations in C...
 ```
 
-### 4. Cp Utility
+### 4. mycp - Custom Copy Utility
 
-The `cp` command copies files:
+The `mycp` utility copies files:
 
 ```bash
-$ cp custom_utils/pwd_util/mypwd.c custom_utils/pwd_util/mypwd_backup.c
+$ ./mycp custom_utils/pwd_util/mypwd.c custom_utils/pwd_util/mypwd_backup.c
 $ ls custom_utils/pwd_util/
 mypwd  mypwd.c  mypwd_backup.c
 
-$ cat custom_utils/pwd_util/mypwd_backup.c
+$ ./mycat custom_utils/pwd_util/mypwd_backup.c
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 ...
-
-# Copy with verbose output
-$ cp -v custom_utils/pwd_util/mypwd.c /tmp/mypwd_copy.c
-'custom_utils/pwd_util/mypwd.c' -> '/tmp/mypwd_copy.c'
 ```
 
-### 5. Mv Utility
+### 5. mymv - Custom Move Utility
 
-The `mv` command moves or renames files:
+The `mymv` utility moves or renames files:
 
 ```bash
-$ mv custom_utils/pwd_util/mypwd_backup.c custom_utils/pwd_util/mypwd_old.c
+$ ./mymv custom_utils/pwd_util/mypwd_backup.c custom_utils/pwd_util/mypwd_old.c
 $ ls custom_utils/pwd_util/
 mypwd  mypwd.c  mypwd_old.c
 
-# Rename a file
-$ mv custom_utils/pwd_util/mypwd_old.c custom_utils/pwd_util/mypwd.c.bak
+$ ./mymv custom_utils/pwd_util/mypwd_old.c custom_utils/pwd_util/mypwd.c.bak
 $ ls custom_utils/pwd_util/
 mypwd  mypwd.c  mypwd.c.bak
-
-# Move file to another directory
-$ mv custom_utils/pwd_util/mypwd.c.bak /tmp/
-$ ls custom_utils/pwd_util/
-mypwd  mypwd.c
 ```
 
 ## Running the Programs
@@ -219,10 +198,6 @@ cd custom_utils/pwd_util/
 # Run the custom pwd utility
 ./mypwd
 ```
-
-## License
-
-This project is open source and available for educational purposes.
 
 ## Author
 

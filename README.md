@@ -95,10 +95,10 @@ gcc custom_utils/pwd_util/mypwd.c -o custom_utils/pwd_util/mypwd
 The custom `myecho` utility prints text to the terminal:
 
 ```bash
-$ ./myecho "Hello, System Programming!"
+$ ./myecho Hello, System Programming!
 Hello, System Programming!
 
-$ ./myecho "Welcome to Linux"
+$ ./myecho Welcome to Linux
 Welcome to Linux
 ```
 

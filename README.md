@@ -55,7 +55,7 @@ brew install gcc
 To compile any C source file into an executable, use the following GCC command format:
 
 ```bash
-gcc -o <output_executable> <source_file.c>
+gcc <source_file.c> -o <output_executable>
 ```
 
 ### Compile All Programs
@@ -64,22 +64,9 @@ To compile all utilities at once, navigate to the repository root and execute:
 
 ```bash
 # Compile mypwd utility
-gcc -o custom_utils/pwd_util/mypwd custom_utils/pwd_util/mypwd.c
+gcc custom_utils/pwd_util/mypwd.c -o custom_utils/pwd_util/mypwd
 ```
 
-### Compilation Options
-
-For development with debugging symbols:
-
-```bash
-gcc -g -o custom_utils/pwd_util/mypwd custom_utils/pwd_util/mypwd.c
-```
-
-For optimized builds:
-
-```bash
-gcc -O2 -o custom_utils/pwd_util/mypwd custom_utils/pwd_util/mypwd.c
-```
 
 ## Utilities
 

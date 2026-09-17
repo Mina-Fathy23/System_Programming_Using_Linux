@@ -10,21 +10,27 @@ A collection of custom Linux utility implementations in C, demonstrating fundame
 - [Compilation](#compilation)
 - [Utilities](#utilities)
   - [mypwd - Print Working Directory](#mypwd---print-working-directory)
+- [Shell Versions](#shell-versions)
 - [Example Outputs](#example-outputs)
 
 ## Overview
 
-This repository contains custom implementations of essential Linux utilities written in C. These implementations showcase system-level programming techniques including file operations, process management, and system calls on Linux platforms.
+This repository contains custom implementations of essential Linux utilities written in C. These implementations showcase system-level programming techniques including file operations, process management, command parsing, environment variables, dynamic memory management, and file-descriptor manipulation.
 
 ## Project Structure
 
 ```
 System_Programming_Using_Linux/
 ├── README.md
-└── custom_utils/
-    └── pwd_util/
-        ├── mypwd.c          # Source code for custom pwd utility
-        └── mypwd            # Compiled executable
+├── custom_utils/
+│   └── pwd_util/
+│       ├── mypwd.c          # Source code for custom pwd utility
+│       └── mypwd            # Compiled executable
+└── shells/                  # Incremental shell implementations
+    ├── femto_shell/
+    ├── pico_shell/
+    ├── nano_shell/
+    └── micro_shell/
 ```
 
 ## Prerequisites
@@ -67,6 +73,11 @@ To compile all utilities at once, navigate to the repository root and execute:
 gcc custom_utils/pwd_util/mypwd.c -o custom_utils/pwd_util/mypwd
 ```
 
+Each shell can be compiled from its directory using the same pattern:
+
+```bash
+gcc <shell_source_file.c> -o <shell_executable>
+```
 
 ## Utilities
 
@@ -87,6 +98,63 @@ gcc custom_utils/pwd_util/mypwd.c -o custom_utils/pwd_util/mypwd
 ```bash
 ./custom_utils/pwd_util/mypwd
 ```
+
+## Shell Versions
+
+The repository now includes four versions of a shell. They form an incremental progression, with each version adding a major systems-programming concept to the previous one.
+
+### femto_shell — Parsing and basic built-ins
+
+`femto_shell` is the baseline implementation. It provides a REPL loop with a fixed two-dimensional array tokenizer and supports only two built-ins:
+
+- `echo`
+- `exit`
+
+All other commands print `Invalid command`. This version does not create processes or execute external programs.
+
+### pico_shell — Processes and external commands
+
+`pico_shell` extends `femto_shell` with:
+
+- `pwd` and `cd` built-ins
+- External command execution through `fork()` and `execvp()`
+- `$PATH` command searching provided by `execvp()`
+- Parent-side child status collection with `wait()` and `WEXITSTATUS`
+
+It still uses a fixed-size two-dimensional array for arguments and does not provide variables or redirection.
+
+### nano_shell — Dynamic arguments and local variables
+
+`nano_shell` replaces the fixed argument array with heap-allocated, dynamically growing storage using `char **new_argv` together with `malloc()`, `realloc()`, and `free()`. It also introduces a local-variable system:
+
+- `VAR=value` assignment detection through `check_local_var`
+- Variable lookup through `find_local_var`
+- `$var` expansion inside tokens through `get_special_arg`
+- `export` using `putenv`
+- `local` to list stored variables
+
+This version uses a `strtok()`-based tokenizer, executes commands with `execvpe()` and a custom environment, guards against excessive arguments, and cleans up heap allocations when exiting.
+
+### micro_shell — I/O redirection and robust cleanup
+
+`micro_shell` builds on `nano_shell` by adding input and output redirection:
+
+- `<` redirects standard input
+- `>` redirects standard output
+- `2>` redirects standard error
+
+For each command, it saves the original standard file descriptors with `dup()`, opens the requested target with the appropriate flags and mode, and applies redirection with `dup2()`. Redirection tokens are removed from the command arguments into a new filtered array. After every command, `restore_std_fds()` restores the original descriptors.
+
+It also adds robust error-path cleanup, including freeing partially built argument lists and restoring file descriptors when setup fails. File-access failures are reported with messages such as `No such file or directory` and `Permission denied`.
+
+### Shell progression at a glance
+
+| Shell | Main concepts |
+| --- | --- |
+| `femto_shell` | Parsing, `echo`, and `exit` |
+| `pico_shell` | `pwd`/`cd` and external commands via `fork()` + `execvp()` |
+| `nano_shell` | Dynamic memory, local variables, `$var` expansion, `export`, and `execvpe()` |
+| `micro_shell` | `<`, `>`, and `2>` redirection, file-descriptor save/restore, and error-path cleanup |
 
 ## Example Outputs
 

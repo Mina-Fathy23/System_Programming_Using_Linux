@@ -417,8 +417,8 @@ char* get_special_arg(char* arg)
         		name_len++;
 
 		if (name_len == 0)
-		{ 
-			char *newline = malloc(1);
+		{
+			char *newline = (char*)malloc(1); 
    			newline[0] = '\0';
    			return newline;
 		}
@@ -440,7 +440,7 @@ char* get_special_arg(char* arg)
 	           			int suffix_len = strlen(name_end);
 	           			int new_len = prefix_len + value_len + suffix_len + 1; // +1 for '\0'
 	
-				        char *new_arg = malloc(new_len);
+				        char *new_arg = (char*)malloc(new_len);
 	            			memcpy(new_arg, arg, prefix_len);
 	            			memcpy(new_arg + prefix_len, value, value_len);
 	            			memcpy(new_arg + prefix_len + value_len, name_end, suffix_len + 1); // copies '\0' too
@@ -452,7 +452,7 @@ char* get_special_arg(char* arg)
 				continue;	
 		}
 		//Didnt' Find key
-		char *newline = malloc(1);
+		char *newline = (char *)malloc(1);
    		newline[0] = '\0';
    		return newline;
 
@@ -483,7 +483,7 @@ void parse_commandline(char buffer[], int read_count)
 		
 		temp = get_special_arg(temp);
 				
-		new_argv[temp_index] = malloc(strlen(temp) + 1);
+		new_argv[temp_index] = (char *)malloc(strlen(temp) + 1);
 		strcpy(new_argv[temp_index], temp);
 		//@debug
 		//printf("New_argv[%d]: %s\n", temp_index, new_argv[temp_index]);
@@ -528,7 +528,7 @@ int check_local_var(void)
     							local_var_cap *= 2;
 						    	local_var = (char **)realloc(local_var, sizeof(char *) * (local_var_cap + 1));
 						}
-						local_var[local_var_num] = malloc(strlen(new_argv[i]) + 1);
+						local_var[local_var_num] = (char *)malloc(strlen(new_argv[i]) + 1);
 						strcpy(local_var[local_var_num], new_argv[i]);
 						local_var_num++;
 					}

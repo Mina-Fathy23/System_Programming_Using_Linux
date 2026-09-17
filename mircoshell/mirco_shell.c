@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <ctype.h>
+#include <fcntl.h>
 
 #define MAX_READ 20000
 #define MAX_SIZE 20000
@@ -25,6 +26,7 @@ char **local_var;
 void parse_commandline(char buffer[], int read_count);
 int check_local_var(void);
 int find_local_var(char* var, int var_len);
+void restore_std_fds(int *saved_stdin, int *saved_stdout, int *saved_stderr);
 
 int main(int argc, char* argv[])
 {
@@ -38,6 +40,10 @@ int main(int argc, char* argv[])
 	input[0] = 0;
 
 	local_var = (char **)malloc(sizeof(char *) * (local_var_cap + 1));
+	int saved_stdout = -1;
+	int saved_stdin = -1;
+	int saved_stderr = -1;
+
 
 	while(1)
 	{	
@@ -71,7 +77,150 @@ int main(int argc, char* argv[])
 		}
 		//no variable enterned: contineu with loop
 
+		status = 0;
+		char **filtered = (char **)malloc(sizeof(char *) * (new_argc + 1));
+		int filtered_len = 0;
+		
+		//Check for redirection special characters >, <, 2>
+		int i;
+		for(i = 0; i < new_argc; i++)
+		{
+			if(!strcmp(new_argv[i], "<") || !strcmp(new_argv[i], ">") || !strcmp(new_argv[i], "2>"))
+			{	
+				if ((i+1 < new_argc) && strlen(new_argv[i+1]) == 0)
+               			{
+               		        	printf("Usage: cmd %s file_name\n", new_argv[i]);
+  		                      	status = -1;
+                       			break;
+               			 }
+				//Stdin redirection
+				if((i+1 < new_argc) && !strcmp(new_argv[i], "<"))
+				{
+					//debug
+					//printf("Found valid input redirection command\n");
+					saved_stdin = dup(STDIN_FILENO);
+					int fd = open(new_argv[i+1], O_RDONLY, 0644);
+					if (fd < 0)
+					{
+						fprintf(stderr, "cannot access %s: No such file or directory\n", new_argv[i + 1]);
+						status = -1;
+						close(fd);
+						break;
+					}
+					if (fd != STDIN_FILENO) {
+						if(dup2(fd, STDIN_FILENO) != STDIN_FILENO)
+						{
+							printf("Failed to duplicate input file\n");
+							status = -1;
+							break;
+						}
+						if(close(fd))
+						{
+							printf("Failed to close old file descriptor");
+							status = -1;
+							break;
+						}
+					}
+					
+				}
+				//Stdout redirection
+				if((i+1 < new_argc) && !strcmp(new_argv[i], ">"))
+				{
 	
+					//debug
+					//printf("Found valid output redirection command\n");
+					saved_stdout = dup(STDOUT_FILENO);
+					int fd = open(new_argv[i+1], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+					if (fd < 0)
+					{
+						fprintf(stderr, "%s: Permission denied\n", new_argv[i + 1]);
+						status = -1;
+						close(fd);
+						break;
+					}
+					if (fd != STDOUT_FILENO) {
+						if(dup2(fd, STDOUT_FILENO) != STDOUT_FILENO)
+						{
+							printf("Failed to duplicate Output file\n");
+							status = -1;
+							break;
+						}
+						if(close(fd))
+						{
+							printf("Failed to close old file descriptor");
+							status = -1;
+							break;
+						}
+					}
+		
+	
+				}
+				//Stderr redirection
+				if((i+1 < new_argc) && !strcmp(new_argv[i], "2>"))
+				{
+	
+					//debug
+					//printf("Found valid error redirection command\n");
+					saved_stderr = dup(STDERR_FILENO);
+					int fd = open(new_argv[i+1], O_WRONLY | O_TRUNC | O_CREAT, 0644);
+					fd = open(new_argv[i + 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+					if (fd < 0)
+					{
+						fprintf(stderr, "%s: Permission denied\n", new_argv[i + 1]);
+						status = -1;
+						close(fd);
+						break;
+					}
+					if (fd != STDERR_FILENO) {
+						if(dup2(fd, STDERR_FILENO) != STDERR_FILENO)
+						{
+							printf("Failed to duplicate Error file\n");
+							status = -1;
+							break;
+						}
+						if(close(fd))
+						{
+							printf("Failed to close old file descriptor");
+							status = -1;
+							break;
+						}
+					}
+				}
+				
+				//Free the special char and the name of file
+				free(new_argv[i]);
+				free(new_argv[i+1]);
+				//skip name of file
+				i++;
+				continue;
+			}
+			filtered[filtered_len++] = new_argv[i];
+			//debug
+			//printf("new_argv[%d]: %s -> filtered[%d]:%s\n", i, new_argv[i], i, filtered[i]);	
+		}
+		
+		if (status != 0)
+		{
+        		for (int j = 0; j < filtered_len; j++)
+                		free(filtered[j]);
+        		for (int j = i; j < new_argc; j++)
+                		free(new_argv[j]);
+        		free(filtered);
+        		free(new_argv);
+        		new_argv = NULL;
+
+        		restore_std_fds(&saved_stdin, &saved_stdout, &saved_stderr);
+       			 continue;
+		}
+		else
+		{
+			filtered[filtered_len] = NULL;
+			free(new_argv);
+			new_argv = filtered;
+			new_argc = filtered_len;
+		}
+	
+
 		//Echo Command
 		if(strcmp(new_argv[0], "echo") == 0)
 		{
@@ -206,10 +355,35 @@ int main(int argc, char* argv[])
 		//Reset command arguments
 		for (int i = 0; i < new_argc; i++)
 			free(new_argv[i]);
-		free(new_argv);	
+		free(new_argv);
+
+		//Reset STD file descriptors
+        	restore_std_fds(&saved_stdin, &saved_stdout, &saved_stderr);
 	}	
 	return status;
 
+}
+
+void restore_std_fds(int *saved_stdin, int *saved_stdout, int *saved_stderr)
+{
+        if (*saved_stdin != -1)
+        {
+                dup2(*saved_stdin, STDIN_FILENO);
+                close(*saved_stdin);
+                *saved_stdin = -1;
+        }
+        if (*saved_stdout != -1)
+        {
+                dup2(*saved_stdout, STDOUT_FILENO);
+                close(*saved_stdout);
+                *saved_stdout = -1;
+        }
+        if (*saved_stderr != -1)
+        {
+                dup2(*saved_stderr, STDERR_FILENO);
+                close(*saved_stderr);
+                *saved_stderr = -1;
+        }
 }
 
 int find_local_var(char* var, int var_len)
@@ -311,6 +485,8 @@ void parse_commandline(char buffer[], int read_count)
 				
 		new_argv[temp_index] = malloc(strlen(temp) + 1);
 		strcpy(new_argv[temp_index], temp);
+		//@debug
+		//printf("New_argv[%d]: %s\n", temp_index, new_argv[temp_index]);
 		temp_index++;
 		temp = strtok(NULL, " ");
 	}
